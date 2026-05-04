@@ -1,4 +1,4 @@
-# Arize Autopilot
+# Arize Auto Hill Climber
 
 A demo product concept for Arize AI — an autopilot layer that continuously monitors your AI agent in production, surfaces prioritized failure clusters, and automatically runs prompt experiments to hill-climb your KPIs.
 
