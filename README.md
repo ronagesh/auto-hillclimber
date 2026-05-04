@@ -1,73 +1,56 @@
-# React + TypeScript + Vite
+# Arize Autopilot
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A demo product concept for Arize AI — an autopilot layer that continuously monitors your AI agent in production, surfaces prioritized failure clusters, and automatically runs prompt experiments to hill-climb your KPIs.
 
-Currently, two official plugins are available:
+## What it does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Enter your product URL. Arize scrapes it, infers what your agent does and what KPIs matter, then generates a live dashboard of:
 
-## React Compiler
+- **Prioritized issue feed** — production failure clusters ranked by frequency, KPI risk, and escalation volume, each backed by real traces and evaluator scores
+- **Suggested fixes** — editable prompt diffs you can review and deploy in one click
+- **Impact tracker** — experiment results showing KPI lift before/after each deployed fix, with confidence intervals and counterfactual baselines
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Stack
 
-## Expanding the ESLint configuration
+- React + Vite + TypeScript
+- Tailwind CSS v3
+- Recharts (impact charts)
+- Anthropic SDK (`claude-haiku-4-5`) — website inference + dashboard generation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Running locally
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. Clone the repo
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create `.env.local` with your Anthropic API key:
+   ```
+   VITE_ANTHROPIC_API_KEY=sk-ant-...
+   ```
+4. Start the dev server:
+   ```bash
+   npm run dev
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+> **Note:** The API key is baked in at build time by Vite. Restart the dev server after adding or changing `.env.local`.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## How it works
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. **URL onboarding** — enter any company URL (e.g. `cursor.com`). Arize fetches structured metadata (title, OG tags, headings) via a CORS proxy and sends it to Claude to infer agent type and KPIs.
+2. **Review & edit** — pre-filled description and KPI fields are shown for confirmation. Edit anything that looks off.
+3. **Dashboard generation** — Claude generates a realistic set of production failure clusters, sample traces with evaluator labels, suggested prompt fixes, and past experiment results — all specific to the company's domain.
+4. **Apply fixes** — clicking "Apply Fix" or deploying from the drawer removes the issue from the feed and records the change. The Impact Tracker shows experiment history with KPI charts.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Key Arize constructs surfaced in the UI
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| Construct | Where |
+|-----------|-------|
+| **Evaluator** | Issue card badge, drawer header, span section subtitle |
+| **Traces & Spans** | Drawer — each sample span shows `tr_XXXXXXXX · sp_XXXXXXXX` IDs with Arize deeplinks |
+| **Experiment** | Impact Tracker — each result card is labeled as an Experiment with evaluator type |
+| **KPI lift** | Stat cards (feed) and lift badges (impact charts) with ±CI |
+
+## Live demo
+
+[arize-autopilot.vercel.app](https://arize-autopilot.vercel.app)
