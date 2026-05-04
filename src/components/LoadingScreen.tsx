@@ -48,13 +48,11 @@ export function LoadingScreen({ profilePromise, onComplete }: LoadingScreenProps
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 mb-10">
-          <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center">
-            <span className="text-white text-[10px] font-bold">AX</span>
-          </div>
-          <span className="font-bold text-gray-900 text-base tracking-wide">ARIZE AUTOPILOT</span>
+          <img src="https://arize.com/wp-content/uploads/2021/10/logo2.svg" alt="Arize" className="h-5" />
+          <span className="font-bold text-gray-900 text-base tracking-wide">HILLCLIMBER</span>
         </div>
 
-        <h2 className="text-xl font-semibold text-gray-900 mb-1">Setting up your autopilot...</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-1">Setting up your HillClimber...</h2>
         <p className="text-sm text-gray-500 mb-8">This only takes a moment.</p>
 
         <div className="flex flex-col gap-3">
