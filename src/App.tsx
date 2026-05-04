@@ -63,7 +63,6 @@ function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         agentLabel={agentLabel}
-        agentType={activeProfile.agentType}
         onReset={handleReset}
       />
       {activeTab === 'feed' ? (

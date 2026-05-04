@@ -4,11 +4,10 @@ interface HeaderProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   agentLabel: string;
-  agentType: string;
   onReset: () => void;
 }
 
-export function Header({ activeTab, onTabChange, agentLabel, agentType, onReset }: HeaderProps) {
+export function Header({ activeTab, onTabChange, agentLabel, onReset }: HeaderProps) {
   return (
     <header className="border-b border-gray-200 bg-white px-6 py-3 flex items-center justify-between sticky top-0 z-10">
       <div className="flex items-center gap-6">
@@ -41,13 +40,8 @@ export function Header({ activeTab, onTabChange, agentLabel, agentType, onReset 
           </button>
         </nav>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded-full font-medium">
-          {agentType}
-        </span>
-        <div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-semibold">
-          R
-        </div>
+      <div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-semibold">
+        R
       </div>
     </header>
   );
