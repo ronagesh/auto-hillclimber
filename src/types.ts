@@ -20,10 +20,10 @@ export interface Issue {
 
 export interface ChartPoint {
   date: string;
-  correctness: number;
-  correctnessBaseline: number | null;
-  escalation: number;
-  escalationBaseline: number | null;
+  metric1: number;
+  metric1Baseline: number | null;
+  metric2: number;
+  metric2Baseline: number | null;
 }
 
 export interface AppliedExperiment {
@@ -32,9 +32,24 @@ export interface AppliedExperiment {
   category: string;
   appliedDate: string;
   change: string;
-  correctness: { before: number; after: number; lift: number; ci: number };
-  escalation: { before: number; after: number; lift: number; ci: number };
+  metric1: { label: string; before: number; after: number; lift: number; ci: number };
+  metric2: { label: string; before: number; after: number; lift: number; ci: number };
   conversations: number;
   fixAtIndex: number;
   chartData: ChartPoint[];
+}
+
+export interface AgentProfile {
+  id: string;
+  projectName: string;
+  label: string;
+  agentType: string;
+  kpi1: string;
+  kpi2: string;
+  openIssues: number;
+  highPriority: number;
+  kpi1Lift: string;
+  kpi2Lift: string;
+  issues: Issue[];
+  experiments: AppliedExperiment[];
 }

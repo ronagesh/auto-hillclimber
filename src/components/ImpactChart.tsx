@@ -15,13 +15,18 @@ interface ImpactChartProps {
   experiment: AppliedExperiment;
 }
 
-function LiftBadge({ label, before, after, lift, ci }: { label: string; before: number; after: number; lift: number; ci: number }) {
+function LiftBadge({ label, lift, before, after, ci }: { label: string; lift: number; before: number; after: number; ci: number }) {
+  const positive = lift >= 0;
   return (
-    <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-semibold px-3 py-1 rounded-full">
+    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${positive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+          d={positive ? 'M13 7l5 5m0 0l-5 5m5-5H6' : 'M11 17l-5-5m0 0l5-5m-5 5h12'} />
       </svg>
-      {label} +{lift} pts <span className="font-normal text-emerald-500">±{ci} ({before} → {after}%)</span>
+      {label} {positive ? '+' : ''}{lift} pts{' '}
+      <span className={`font-normal ${positive ? 'text-emerald-500' : 'text-red-400'}`}>
+        ±{ci} ({before} → {after}%)
+      </span>
     </span>
   );
 }
@@ -47,8 +52,8 @@ export function ImpactChart({ experiment }: ImpactChartProps) {
       </div>
 
       <div className="flex items-center gap-3 mb-4 flex-wrap">
-        <LiftBadge label="Correctness" before={experiment.correctness.before} after={experiment.correctness.after} lift={experiment.correctness.lift} ci={experiment.correctness.ci} />
-        <LiftBadge label="Escalation Acc." before={experiment.escalation.before} after={experiment.escalation.after} lift={experiment.escalation.lift} ci={experiment.escalation.ci} />
+        <LiftBadge label={experiment.metric1.label} lift={experiment.metric1.lift} before={experiment.metric1.before} after={experiment.metric1.after} ci={experiment.metric1.ci} />
+        <LiftBadge label={experiment.metric2.label} lift={experiment.metric2.lift} before={experiment.metric2.before} after={experiment.metric2.after} ci={experiment.metric2.ci} />
       </div>
 
       <ResponsiveContainer width="100%" height={220}>
@@ -69,10 +74,10 @@ export function ImpactChart({ experiment }: ImpactChartProps) {
               label={{ value: 'Fix applied', position: 'insideTopRight', fontSize: 10, fill: '#6366f1' }}
             />
           )}
-          <Line type="monotone" dataKey="correctness" name="Correctness" stroke="#3b82f6" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="escalation" name="Escalation Acc." stroke="#10b981" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="correctnessBaseline" name="Correctness (no fix)" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} strokeOpacity={0.4} />
-          <Line type="monotone" dataKey="escalationBaseline" name="Escalation (no fix)" stroke="#10b981" strokeWidth={1.5} strokeDasharray="4 4" dot={false} strokeOpacity={0.4} />
+          <Line type="monotone" dataKey="metric1" name={experiment.metric1.label} stroke="#3b82f6" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="metric2" name={experiment.metric2.label} stroke="#10b981" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="metric1Baseline" name={`${experiment.metric1.label} (no fix)`} stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} strokeOpacity={0.4} />
+          <Line type="monotone" dataKey="metric2Baseline" name={`${experiment.metric2.label} (no fix)`} stroke="#10b981" strokeWidth={1.5} strokeDasharray="4 4" dot={false} strokeOpacity={0.4} />
         </ComposedChart>
       </ResponsiveContainer>
 

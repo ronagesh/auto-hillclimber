@@ -1,9 +1,12 @@
-import { EXPERIMENTS } from '../data/experiments';
-import { ISSUES } from '../data/issues';
+import type { AgentProfile } from '../types';
 import { ImpactChart } from './ImpactChart';
 
-export function ImpactTracker() {
-  const openIssues = ISSUES.filter(i => i.status === 'open');
+interface ImpactTrackerProps {
+  profile: AgentProfile;
+}
+
+export function ImpactTracker({ profile }: ImpactTrackerProps) {
+  const openIssues = profile.issues.filter(i => i.status === 'open');
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -14,7 +17,7 @@ export function ImpactTracker() {
         </p>
       </div>
 
-      {EXPERIMENTS.map(exp => (
+      {profile.experiments.map(exp => (
         <ImpactChart key={exp.id} experiment={exp} />
       ))}
 
