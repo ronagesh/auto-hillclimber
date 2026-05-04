@@ -1,31 +1,48 @@
 import { useEffect, useRef, useState } from 'react';
+import type { AgentProfile } from '../types';
 
-const STEPS = [
-  'Analyzing agent description',
+const TIMED_STEPS = [
+  'Analyzing your product',
   'Clustering production failure patterns',
   'Configuring evaluators for your KPIs',
   'Ranking improvement opportunities by impact',
-  'Estimating experiment baselines',
 ];
 
+const FINAL_STEP = 'Generating your dashboard';
+
 interface LoadingScreenProps {
-  onComplete: () => void;
+  profilePromise: Promise<AgentProfile>;
+  onComplete: (profile: AgentProfile) => void;
 }
 
-export function LoadingScreen({ onComplete }: LoadingScreenProps) {
+export function LoadingScreen({ profilePromise, onComplete }: LoadingScreenProps) {
   const [completedSteps, setCompletedSteps] = useState(0);
+  const [finalDone, setFinalDone] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
+  // Tick through the timed steps
   useEffect(() => {
-    if (completedSteps >= STEPS.length) {
-      const t = setTimeout(() => onCompleteRef.current(), 500);
-      return () => clearTimeout(t);
-    }
-    const delay = completedSteps === 0 ? 600 : 700 + Math.random() * 400;
+    if (completedSteps >= TIMED_STEPS.length) return;
+    const delay = completedSteps === 0 ? 500 : 600 + Math.random() * 400;
     const t = setTimeout(() => setCompletedSteps(s => s + 1), delay);
     return () => clearTimeout(t);
-  }, [completedSteps]); // onComplete excluded — stored in ref to avoid restarting the effect
+  }, [completedSteps]);
+
+  // Wait for the API promise for the final step
+  useEffect(() => {
+    profilePromise.then(profile => {
+      setFinalDone(true);
+      setTimeout(() => onCompleteRef.current(profile), 600);
+    }).catch(() => {
+      setFinalDone(true);
+      setTimeout(() => onCompleteRef.current(null as unknown as AgentProfile), 600);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const allTimedDone = completedSteps >= TIMED_STEPS.length;
+  const steps = [...TIMED_STEPS, FINAL_STEP];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
@@ -41,9 +58,11 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
         <p className="text-sm text-gray-500 mb-8">This only takes a moment.</p>
 
         <div className="flex flex-col gap-3">
-          {STEPS.map((step, i) => {
-            const done = i < completedSteps;
-            const active = i === completedSteps;
+          {steps.map((step, i) => {
+            const isFinal = i === steps.length - 1;
+            const done = isFinal ? finalDone : i < completedSteps;
+            const active = isFinal ? (allTimedDone && !finalDone) : i === completedSteps;
+
             return (
               <div key={step} className="flex items-center gap-3">
                 <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
@@ -57,7 +76,9 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
                     <div className="w-2 h-2 rounded-full bg-gray-300" />
                   )}
                 </div>
-                <span className={`text-sm transition-colors ${done ? 'text-gray-700' : active ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                <span className={`text-sm transition-colors ${
+                  done ? 'text-gray-700' : active ? 'text-gray-900 font-medium' : 'text-gray-400'
+                }`}>
                   {step}
                 </span>
               </div>

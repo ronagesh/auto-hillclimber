@@ -10,11 +10,14 @@ import { ImpactTracker } from './components/ImpactTracker';
 
 type AppState = 'onboarding' | 'loading' | 'dashboard';
 
-function extractAgentLabel(description: string): string {
-  const clean = description.trim().replace(/\.$/, '');
-  const words = clean.split(/\s+/);
-  if (words.length <= 6) return clean;
-  return words.slice(0, 6).join(' ') + '...';
+function extractAgentLabel(input: string): string {
+  if (input.startsWith('manual:')) {
+    const desc = input.slice('manual:'.length).split('|||')[0].trim().replace(/\.$/, '');
+    const words = desc.split(/\s+/);
+    return words.length <= 6 ? desc : words.slice(0, 6).join(' ') + '...';
+  }
+  try { return new URL(input).hostname.replace('www.', ''); }
+  catch { return input; }
 }
 
 function App() {
@@ -22,35 +25,17 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('feed');
   const [activeProfile, setActiveProfile] = useState<AgentProfile>(PROFILES[0]);
   const [agentLabel, setAgentLabel] = useState('');
-
-  // Holds the in-flight profile promise so the loading screen can await it
-  const profilePromiseRef = useRef<Promise<AgentProfile> | null>(null);
+  const profilePromiseRef = useRef<Promise<AgentProfile>>(Promise.resolve(PROFILES[0]));
 
   function handleActivate(input: string) {
-    // Derive a display label from the input
-    if (input.startsWith('manual:')) {
-      const desc = input.slice('manual:'.length).split('|||')[0];
-      setAgentLabel(extractAgentLabel(desc));
-    } else {
-      // Show the domain as the label while loading
-      try { setAgentLabel(new URL(input).hostname.replace('www.', '')); }
-      catch { setAgentLabel(input); }
-    }
+    setAgentLabel(extractAgentLabel(input));
     profilePromiseRef.current = generateProfile(input).catch(() => PROFILES[0]);
     setAppState('loading');
   }
 
-  function handleLoadingComplete() {
-    const promise = profilePromiseRef.current ?? Promise.resolve(PROFILES[0]);
-    promise
-      .then(profile => {
-        setActiveProfile(profile);
-        setAppState('dashboard');
-      })
-      .catch(() => {
-        setActiveProfile(PROFILES[0]);
-        setAppState('dashboard');
-      });
+  function handleLoadingComplete(profile: AgentProfile) {
+    setActiveProfile(profile ?? PROFILES[0]);
+    setAppState('dashboard');
   }
 
   function handleReset() {
@@ -67,7 +52,12 @@ function App() {
   }
 
   if (appState === 'loading') {
-    return <LoadingScreen onComplete={handleLoadingComplete} />;
+    return (
+      <LoadingScreen
+        profilePromise={profilePromiseRef.current}
+        onComplete={handleLoadingComplete}
+      />
+    );
   }
 
   return (
