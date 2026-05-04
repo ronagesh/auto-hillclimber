@@ -13,10 +13,8 @@ export function Header({ activeTab, onTabChange, agentLabel, onReset }: HeaderPr
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <button onClick={onReset} className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-            <div className="w-5 h-5 rounded bg-violet-600 flex items-center justify-center">
-              <span className="text-white text-[9px] font-bold">AX</span>
-            </div>
-            <span className="font-semibold text-gray-900 text-sm tracking-wide">ARIZE</span>
+            <img src="https://avatars.githubusercontent.com/u/71517989" alt="Arize" className="w-5 h-5 rounded" />
+            <span className="font-semibold text-gray-900 text-sm tracking-wide">ARIZE HILLCLIMBER</span>
           </button>
           <span className="text-gray-200">|</span>
           <span className="text-sm text-gray-500 font-medium truncate max-w-[180px]">{agentLabel}</span>
@@ -28,7 +26,7 @@ export function Header({ activeTab, onTabChange, agentLabel, onReset }: HeaderPr
               activeTab === 'feed' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            Autopilot
+            HillClimber
           </button>
           <button
             onClick={() => onTabChange('impact')}

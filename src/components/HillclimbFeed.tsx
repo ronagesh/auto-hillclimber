@@ -58,7 +58,7 @@ export function HillclimbFeed({ profile, appliedIds, onApply }: HillclimbFeedPro
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Arize Autopilot</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Arize HillClimber</h1>
         <p className="text-sm text-gray-500">
           Issues are ranked by their expected impact on your KPIs. Apply suggested fixes to automatically run experiments and improve your agent.
         </p>

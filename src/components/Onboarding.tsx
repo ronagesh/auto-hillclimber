@@ -40,7 +40,7 @@ export function Onboarding({ onActivate }: OnboardingProps) {
       <Shell>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Put your agent on autopilot.</h1>
         <p className="text-base text-gray-500 mb-8">
-          Enter your product URL. Arize will analyze what your agent does, surface production failures, and start improving your KPIs automatically.
+          Enter your product URL. Arize HillClimber will analyze what your agent does, surface production failures, and start improving your KPIs automatically.
         </p>
 
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -129,10 +129,8 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-xl">
         <div className="flex items-center gap-2 mb-10">
-          <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center">
-            <span className="text-white text-[10px] font-bold">AX</span>
-          </div>
-          <span className="font-bold text-gray-900 text-base tracking-wide">ARIZE AUTOPILOT</span>
+          <img src="https://avatars.githubusercontent.com/u/71517989" alt="Arize" className="w-7 h-7 rounded" />
+          <span className="font-bold text-gray-900 text-base tracking-wide">ARIZE HILLCLIMBER</span>
         </div>
         {children}
       </div>
