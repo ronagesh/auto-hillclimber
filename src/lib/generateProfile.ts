@@ -103,30 +103,62 @@ function assembleProfile(raw: Record<string, unknown>): AgentProfile {
   };
 }
 
+function extractStructuredContent(html: string): string {
+  const get = (pattern: RegExp) => (html.match(pattern) ?? [])[1]?.trim() ?? '';
+  const getAll = (pattern: RegExp) => [...html.matchAll(pattern)].map(m => m[1]?.trim()).filter(Boolean);
+
+  const title = get(/<title[^>]*>([^<]+)<\/title>/i);
+  const description = get(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)
+    || get(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
+  const ogTitle = get(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i);
+  const ogDesc = get(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
+  const h1s = getAll(/<h1[^>]*>([^<]+)<\/h1>/gi);
+  const h2s = getAll(/<h2[^>]*>([^<]+)<\/h2>/gi).slice(0, 6);
+
+  // Also grab a snippet of body text as fallback
+  const bodyText = html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 1500);
+
+  return [
+    title && `Title: ${title}`,
+    ogTitle && ogTitle !== title && `OG Title: ${ogTitle}`,
+    description && `Meta description: ${description}`,
+    ogDesc && ogDesc !== description && `OG description: ${ogDesc}`,
+    h1s.length && `H1: ${h1s.join(' | ')}`,
+    h2s.length && `Headings: ${h2s.join(' | ')}`,
+    bodyText && `Body excerpt: ${bodyText}`,
+  ].filter(Boolean).join('\n');
+}
+
 async function fetchWebsiteText(url: string): Promise<string> {
   try {
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
     const data = await res.json() as { contents?: string };
     const html = data.contents ?? '';
-    // Strip scripts, styles, tags; collapse whitespace
-    return html
-      .replace(/<script[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 4000);
+    return extractStructuredContent(html);
   } catch {
     return '';
   }
 }
 
-const GENERATION_PROMPT = `You are the Arize Autopilot intelligence engine. Given context about a company's product, generate a realistic set of production failure clusters that their AI agent is experiencing, along with sample traces and suggested fixes.
+const GENERATION_PROMPT = `You are the Arize Autopilot intelligence engine. Given context about a company, you must:
+1. Accurately identify what this specific company's core product is and what AI agent they operate
+2. Generate realistic production failure clusters for THAT specific agent
+
+Be precise about the company. If you recognize the company from your training data, use that knowledge. Do not confuse companies with similar names or guess based on the domain alone.
 
 Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 
 {
+  "companyType": "One sentence: what does this company do and what AI agent are they operating?",
   "kpi1": "Primary KPI name, 2-4 words, using terminology natural to this company's domain",
   "kpi2": "Secondary KPI name, 2-4 words",
   "kpi1Lift": "+X pts",
@@ -201,17 +233,18 @@ export async function generateProfile(input: string): Promise<AgentProfile> {
   let contextBlock: string;
 
   if (input.startsWith('manual:')) {
-    // Manual description mode: "manual:description|||kpis"
     const rest = input.slice('manual:'.length);
     const [description, kpis] = rest.split('|||');
     contextBlock = `Agent description: ${description}\nKPIs that matter: ${kpis}`;
   } else {
-    // URL mode: fetch site content, fall back to URL-only inference
+    let domain = input;
+    try { domain = new URL(input).hostname.replace('www.', ''); } catch { /* noop */ }
+
     const websiteText = await fetchWebsiteText(input);
     if (websiteText.length > 100) {
-      contextBlock = `Company website URL: ${input}\n\nWebsite content (truncated):\n${websiteText}`;
+      contextBlock = `Company: ${domain}\nURL: ${input}\n\nWebsite metadata and content:\n${websiteText}\n\nIMPORTANT: Use the above content plus your own training knowledge about ${domain} to accurately identify what this company does before generating issues.`;
     } else {
-      contextBlock = `Company website URL: ${input}\n\nNote: Could not fetch website content — infer the company's product and AI agent use case from the URL and your knowledge of this company.`;
+      contextBlock = `Company: ${domain}\nURL: ${input}\n\nNo website content could be fetched. Use your training knowledge about ${domain} to identify exactly what this company does and what AI agent they operate. Be specific and accurate — do not guess based on the domain name alone.`;
     }
   }
 
