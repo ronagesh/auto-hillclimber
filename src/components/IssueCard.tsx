@@ -50,7 +50,7 @@ export function IssueCard({ issue, onApply }: IssueCardProps) {
               </span>
               <span className="text-xs text-gray-400">{issue.category}</span>
               <span className="text-gray-200">·</span>
-              <span className="text-xs text-gray-400">{issue.evaluator}</span>
+              <span className="text-xs font-mono bg-violet-50 text-violet-600 border border-violet-100 px-1.5 py-0.5 rounded">{issue.evaluator}</span>
             </div>
             <h3 className="text-base font-semibold text-gray-900 mb-1.5">{issue.title}</h3>
             <p className="text-sm text-gray-500 leading-relaxed mb-3">{issue.description}</p>

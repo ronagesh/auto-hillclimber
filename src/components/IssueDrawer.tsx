@@ -7,6 +7,18 @@ interface IssueDrawerProps {
   onDeploy: (id: string, fix: string) => void;
 }
 
+function toTraceId(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+  return 'tr_' + Math.abs(h).toString(16).padStart(8, '0').slice(0, 8);
+}
+
+function toSpanId(seed: string): string {
+  let h = 5381;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(33, h) ^ seed.charCodeAt(i);
+  return 'sp_' + Math.abs(h).toString(16).padStart(8, '0').slice(0, 8);
+}
+
 export function IssueDrawer({ issue, onClose, onDeploy }: IssueDrawerProps) {
   const [editedFix, setEditedFix] = useState(issue.suggestedPromptDiff);
   const [deployed, setDeployed] = useState(false);
@@ -40,10 +52,15 @@ export function IssueDrawer({ issue, onClose, onDeploy }: IssueDrawerProps) {
         {/* Header */}
         <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100 flex-shrink-0">
           <div className="flex-1 min-w-0 pr-4">
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-xs text-gray-400">{issue.category}</span>
               <span className="text-gray-200">·</span>
-              <span className="text-xs text-gray-400">{issue.evaluator}</span>
+              <span className="inline-flex items-center gap-1 text-xs font-mono bg-violet-50 text-violet-700 border border-violet-100 px-2 py-0.5 rounded">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Evaluator: {issue.evaluator}
+              </span>
             </div>
             <h2 className="text-lg font-semibold text-gray-900">{issue.title}</h2>
             <p className="text-sm text-gray-500 mt-1 leading-relaxed">{issue.description}</p>
@@ -61,60 +78,92 @@ export function IssueDrawer({ issue, onClose, onDeploy }: IssueDrawerProps) {
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-7">
 
-          {/* Sample spans */}
+          {/* Traces & Spans */}
           <section>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-800">
-                Affected spans
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                Traces &amp; Spans
               </h3>
-              <span className="text-xs text-gray-400">
-                {issue.affectedSpans.toLocaleString()} total · showing {issue.sampleSpans.length}
-              </span>
+              <a
+                href="https://app.arize.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-violet-600 hover:text-violet-800 font-medium flex items-center gap-1 transition-colors"
+              >
+                View all {issue.affectedSpans.toLocaleString()} spans in Arize
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
             </div>
+            <p className="text-xs text-gray-400 mb-3">
+              Scored by evaluator <span className="font-mono text-violet-600">{issue.evaluator}</span> · showing {issue.sampleSpans.length} of {issue.affectedSpans.toLocaleString()} total
+            </p>
 
             <div className="flex flex-col gap-3">
-              {issue.sampleSpans.map(span => (
-                <div
-                  key={span.id}
-                  className={`rounded-lg border p-4 ${
-                    span.evalLabel === 'fail'
-                      ? 'border-red-100 bg-red-50/40'
-                      : 'border-emerald-100 bg-emerald-50/40'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
-                      span.evalLabel === 'fail' ? 'bg-red-100' : 'bg-emerald-100'
-                    }`}>
-                      {span.evalLabel === 'fail' ? (
-                        <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      ) : (
-                        <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="grid grid-cols-2 gap-3 mb-2">
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">User</p>
-                          <p className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">{span.userInput}</p>
+              {issue.sampleSpans.map(span => {
+                const traceId = toTraceId(span.id);
+                const spanId = toSpanId(span.id);
+                return (
+                  <div
+                    key={span.id}
+                    className={`rounded-lg border p-4 ${
+                      span.evalLabel === 'fail'
+                        ? 'border-red-100 bg-red-50/40'
+                        : 'border-emerald-100 bg-emerald-50/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+                          span.evalLabel === 'fail' ? 'bg-red-100' : 'bg-emerald-100'
+                        }`}>
+                          {span.evalLabel === 'fail' ? (
+                            <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          ) : (
+                            <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
                         </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Agent</p>
-                          <p className="text-xs text-gray-700 leading-relaxed">{span.agentOutput}</p>
-                        </div>
+                        <span className={`text-[10px] font-semibold uppercase tracking-wide ${span.evalLabel === 'fail' ? 'text-red-500' : 'text-emerald-600'}`}>
+                          {span.evalLabel === 'fail' ? 'Fail' : 'Pass'}
+                        </span>
                       </div>
-                      <p className={`text-xs mt-1 ${span.evalLabel === 'fail' ? 'text-red-600' : 'text-emerald-700'}`}>
-                        <span className="font-medium">{span.evalLabel === 'fail' ? 'Why it failed: ' : 'Why it passed: '}</span>
-                        {span.evalReason}
-                      </p>
+                      <div className="flex items-center gap-2 text-[10px] font-mono text-gray-400">
+                        <span title="Trace ID">{traceId}</span>
+                        <span className="text-gray-200">·</span>
+                        <span title="Span ID">{spanId}</span>
+                        <a
+                          href="https://app.arize.com"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-violet-500 hover:text-violet-700 ml-1"
+                          title="View trace in Arize"
+                        >
+                          ↗
+                        </a>
+                      </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-3 mb-2">
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">User Input</p>
+                        <p className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">{span.userInput}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Agent Output</p>
+                        <p className="text-xs text-gray-700 leading-relaxed">{span.agentOutput}</p>
+                      </div>
+                    </div>
+                    <p className={`text-xs mt-1 ${span.evalLabel === 'fail' ? 'text-red-600' : 'text-emerald-700'}`}>
+                      <span className="font-medium">{span.evalLabel === 'fail' ? 'Eval reason: ' : 'Eval reason: '}</span>
+                      {span.evalReason}
+                    </p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 
