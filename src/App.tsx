@@ -41,12 +41,16 @@ function App() {
   }
 
   function handleLoadingComplete() {
-    // Animation finished — now wait for the profile (usually already resolved)
     const promise = profilePromiseRef.current ?? Promise.resolve(PROFILES[0]);
-    promise.then(profile => {
-      setActiveProfile(profile);
-      setAppState('dashboard');
-    });
+    promise
+      .then(profile => {
+        setActiveProfile(profile);
+        setAppState('dashboard');
+      })
+      .catch(() => {
+        setActiveProfile(PROFILES[0]);
+        setAppState('dashboard');
+      });
   }
 
   function handleReset() {
