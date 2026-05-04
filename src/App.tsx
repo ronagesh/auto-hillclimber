@@ -25,6 +25,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('feed');
   const [activeProfile, setActiveProfile] = useState<AgentProfile>(PROFILES[0]);
   const [agentLabel, setAgentLabel] = useState('');
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const profilePromiseRef = useRef<Promise<AgentProfile>>(Promise.resolve(PROFILES[0]));
 
   function handleActivate(input: string) {
@@ -35,6 +36,7 @@ function App() {
 
   function handleLoadingComplete(profile: AgentProfile) {
     setActiveProfile(profile ?? PROFILES[0]);
+    setAppliedIds(new Set());
     setAppState('dashboard');
   }
 
@@ -43,8 +45,8 @@ function App() {
     setActiveTab('feed');
   }
 
-  function handleApply(_id: string) {
-    setActiveTab('impact');
+  function handleApply(id: string) {
+    setAppliedIds(prev => new Set([...prev, id]));
   }
 
   if (appState === 'onboarding') {
@@ -69,7 +71,7 @@ function App() {
         onReset={handleReset}
       />
       {activeTab === 'feed' ? (
-        <HillclimbFeed profile={activeProfile} onApply={handleApply} />
+        <HillclimbFeed profile={activeProfile} appliedIds={appliedIds} onApply={handleApply} />
       ) : (
         <ImpactTracker profile={activeProfile} />
       )}

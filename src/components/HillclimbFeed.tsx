@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Issue, Priority, AgentProfile } from '../types';
+import type { Issue, Priority, AgentProfile } from '../types'; // useState used for priority/category filters
 import { IssueCard } from './IssueCard';
 
 const PRIORITIES: { label: string; value: Priority | 'all' }[] = [
@@ -36,13 +36,13 @@ function StatCard({ label, value, sub, accent }: StatCardProps) {
 
 interface HillclimbFeedProps {
   profile: AgentProfile;
+  appliedIds: Set<string>;
   onApply: (id: string) => void;
 }
 
-export function HillclimbFeed({ profile, onApply }: HillclimbFeedProps) {
+export function HillclimbFeed({ profile, appliedIds, onApply }: HillclimbFeedProps) {
   const [priority, setPriority] = useState<Priority | 'all'>('all');
   const [category, setCategory] = useState('All');
-  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 
   const openIssues = profile.issues.filter(i => !appliedIds.has(i.id));
   const highPriority = openIssues.filter(i => i.priority === 'high').length;
@@ -54,11 +54,6 @@ export function HillclimbFeed({ profile, onApply }: HillclimbFeedProps) {
     if (category !== 'All' && issue.category !== category) return false;
     return true;
   });
-
-  function handleApply(id: string) {
-    setAppliedIds(prev => new Set([...prev, id]));
-    onApply(id);
-  }
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -106,7 +101,7 @@ export function HillclimbFeed({ profile, onApply }: HillclimbFeedProps) {
 
       <div className="flex flex-col gap-3">
         {filtered.map(issue => (
-          <IssueCard key={issue.id} issue={issue} onApply={handleApply} />
+          <IssueCard key={issue.id} issue={issue} onApply={onApply} />
         ))}
         {filtered.length === 0 && (
           <div className="text-center py-12 text-gray-400 text-sm">
