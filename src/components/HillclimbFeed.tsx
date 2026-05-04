@@ -42,14 +42,23 @@ interface HillclimbFeedProps {
 export function HillclimbFeed({ profile, onApply }: HillclimbFeedProps) {
   const [priority, setPriority] = useState<Priority | 'all'>('all');
   const [category, setCategory] = useState('All');
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 
-  const categories = ['All', ...Array.from(new Set(profile.issues.map(i => i.category)))];
+  const openIssues = profile.issues.filter(i => !appliedIds.has(i.id));
+  const highPriority = openIssues.filter(i => i.priority === 'high').length;
 
-  const filtered = profile.issues.filter((issue: Issue) => {
+  const categories = ['All', ...Array.from(new Set(openIssues.map(i => i.category)))];
+
+  const filtered = openIssues.filter((issue: Issue) => {
     if (priority !== 'all' && issue.priority !== priority) return false;
     if (category !== 'All' && issue.category !== category) return false;
     return true;
   });
+
+  function handleApply(id: string) {
+    setAppliedIds(prev => new Set([...prev, id]));
+    onApply(id);
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -61,8 +70,8 @@ export function HillclimbFeed({ profile, onApply }: HillclimbFeedProps) {
       </div>
 
       <div className="flex gap-3 mb-6">
-        <StatCard label="Open Issues" value={profile.openIssues} sub="awaiting action" />
-        <StatCard label="High Priority" value={profile.highPriority} sub="immediate attention needed" />
+        <StatCard label="Open Issues" value={openIssues.length} sub="awaiting action" />
+        <StatCard label="High Priority" value={highPriority} sub="immediate attention needed" />
         <StatCard label={profile.kpi1 + ' Lift'} value={profile.kpi1Lift} sub="↑ from last experiment" accent />
         <StatCard label={profile.kpi2 + ' Lift'} value={profile.kpi2Lift} sub="↑ from last experiment" accent />
       </div>
@@ -97,10 +106,14 @@ export function HillclimbFeed({ profile, onApply }: HillclimbFeedProps) {
 
       <div className="flex flex-col gap-3">
         {filtered.map(issue => (
-          <IssueCard key={issue.id} issue={issue} onApply={onApply} />
+          <IssueCard key={issue.id} issue={issue} onApply={handleApply} />
         ))}
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-gray-400 text-sm">No issues match the selected filters.</div>
+          <div className="text-center py-12 text-gray-400 text-sm">
+            {openIssues.length === 0
+              ? 'All issues resolved. Check the Impact Tracker to see your KPI improvements.'
+              : 'No issues match the selected filters.'}
+          </div>
         )}
       </div>
     </div>
