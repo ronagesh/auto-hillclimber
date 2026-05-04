@@ -53,4 +53,4 @@ Enter your product URL. Arize scrapes it, infers what your agent does and what K
 
 ## Live demo
 
-[arize-autopilot.vercel.app](https://arize-autopilot.vercel.app)
+[auto-hill-climber.vercel.app](https://auto-hill-climber.vercel.app)
