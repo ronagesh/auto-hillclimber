@@ -3,6 +3,14 @@ export type Priority = 'high' | 'medium' | 'low';
 export type Level = 'high' | 'medium' | 'low';
 export type IssueStatus = 'open' | 'applied';
 
+export interface SampleSpan {
+  id: string;
+  userInput: string;
+  agentOutput: string;
+  evalLabel: 'pass' | 'fail';
+  evalReason: string;
+}
+
 export interface Issue {
   id: string;
   priority: Priority;
@@ -16,6 +24,8 @@ export interface Issue {
   affectedSpans: number;
   status: IssueStatus;
   suggestedFix: string;
+  suggestedPromptDiff: string;
+  sampleSpans: SampleSpan[];
 }
 
 export interface ChartPoint {

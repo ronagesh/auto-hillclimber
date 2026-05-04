@@ -28,6 +28,38 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Add explicit escalation triggers for tickets containing "refund" + "dispute" or "chargeback".',
+        suggestedPromptDiff:
+          'If a customer mentions "refund", "dispute", "chargeback", or "billing error" and the issue requires approval authority, immediately escalate to the billing team. Do not attempt to resolve autonomously. Say: "This requires our billing team. I\'m escalating now — they\'ll follow up within 24 hours."',
+        sampleSpans: [
+          {
+            id: 'cs-1-s1',
+            userInput: "I've been charged incorrectly for the past three months and need a refund immediately.",
+            agentOutput: "I understand your frustration. Here's how to submit a refund request through our self-service portal: log in, go to Billing > Disputes, and fill out the refund form. You should hear back in 5–7 business days.",
+            evalLabel: 'fail',
+            evalReason: 'Customer reported 3 months of incorrect charges — this requires billing team approval, not self-service instructions.',
+          },
+          {
+            id: 'cs-1-s2',
+            userInput: "There's a chargeback dispute on my account from last week. How do I get this resolved?",
+            agentOutput: "Chargebacks can take 5–10 business days to process. In the meantime, I recommend gathering your purchase receipts and transaction history. You can submit documentation through the portal.",
+            evalLabel: 'fail',
+            evalReason: 'Chargeback disputes must be escalated to billing immediately — agent provided self-service steps instead.',
+          },
+          {
+            id: 'cs-1-s3',
+            userInput: "Can I get a partial refund for the subscription days I didn't use this month?",
+            agentOutput: "I've escalated your partial refund request to our billing team. They'll review your account and follow up within 24 hours with a resolution.",
+            evalLabel: 'pass',
+            evalReason: 'Correctly escalated refund request to billing team rather than attempting autonomous resolution.',
+          },
+          {
+            id: 'cs-1-s4',
+            userInput: "I was double-charged this month. Two identical transactions appeared on my statement.",
+            agentOutput: "Duplicate charges happen occasionally. Please wait 3–5 business days as these often resolve automatically. If not, use our billing portal to file a report.",
+            evalLabel: 'fail',
+            evalReason: 'Duplicate charge requires immediate billing team review — agent dismissed it as self-resolving.',
+          },
+        ],
       },
       {
         id: 'cs-2',
@@ -44,6 +76,31 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Pin the return policy KB article as a required retrieval for any response involving returns or refunds.',
+        suggestedPromptDiff:
+          'When answering questions about returns or refunds, always retrieve and cite the current return policy from the knowledge base. Our return window is 14 days from date of purchase — not 30. Never state a return window from memory. Reference the KB article and quote it verbatim.',
+        sampleSpans: [
+          {
+            id: 'cs-2-s1',
+            userInput: "What's your return policy? I bought something 3 weeks ago.",
+            agentOutput: "Our return policy allows returns within 30 days of purchase, so you still have time. Just visit our returns portal to initiate the process.",
+            evalLabel: 'fail',
+            evalReason: 'Agent stated 30-day window; actual policy is 14 days. Customer was given incorrect eligibility information.',
+          },
+          {
+            id: 'cs-2-s2',
+            userInput: "I want to return a pair of shoes I bought 10 days ago.",
+            agentOutput: "You're within our 14-day return window. Here's how to start your return: go to Orders, select the item, and choose Return. You'll get a prepaid label by email.",
+            evalLabel: 'pass',
+            evalReason: 'Correctly cited 14-day policy and provided accurate return instructions.',
+          },
+          {
+            id: 'cs-2-s3',
+            userInput: "Can I still return something I purchased a month ago?",
+            agentOutput: "Absolutely — our return window is 30 days, so you're still within the eligible period. Happy to help you get started.",
+            evalLabel: 'fail',
+            evalReason: 'Item is outside the 14-day window but agent incorrectly told customer they are still eligible.',
+          },
+        ],
       },
       {
         id: 'cs-3',
@@ -60,6 +117,31 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Expand the shipping KB to include international rate tables and link to the live shipping calculator.',
+        suggestedPromptDiff:
+          'For international shipping questions, provide these estimated rates: Europe $25–45, Canada $15–30, Asia Pacific $35–65, Latin America $20–40. Delivery: 7–14 business days. For exact quotes, direct customers to the live calculator at shop.example.com/shipping.',
+        sampleSpans: [
+          {
+            id: 'cs-3-s1',
+            userInput: "How much does shipping cost to Germany?",
+            agentOutput: "I don't have international shipping rates readily available. I'd recommend visiting our website's shipping page or reaching out to our shipping team directly.",
+            evalLabel: 'fail',
+            evalReason: 'Agent was unable to provide any cost estimate. Customer received no actionable information.',
+          },
+          {
+            id: 'cs-3-s2',
+            userInput: "What are my shipping options if I'm ordering from Canada?",
+            agentOutput: "We do ship to Canada! Standard shipping typically takes 7–14 business days and runs about $15–30 depending on order size. You can get an exact quote at checkout.",
+            evalLabel: 'pass',
+            evalReason: 'Provided a useful rate range and delivery timeframe.',
+          },
+          {
+            id: 'cs-3-s3',
+            userInput: "Do you ship to Japan, and what would shipping cost?",
+            agentOutput: "International shipping availability varies by region. For Japan, I'm not sure of current rates. Please check our website for the most up-to-date shipping information.",
+            evalLabel: 'fail',
+            evalReason: 'No rate or timeframe provided. Agent deflected with no useful information.',
+          },
+        ],
       },
       {
         id: 'cs-4',
@@ -76,6 +158,31 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Add "unauthorized access" and "compromised" as hard-coded escalation triggers bypassing normal resolution flow.',
+        suggestedPromptDiff:
+          'If a customer reports unauthorized access, suspicious login activity, account compromise, or uses words like "hacked", "compromised", or "unauthorized login", immediately escalate to the security team. Do not attempt standard account recovery. Say: "This is a security matter. I\'m escalating to our security team now — please also change your password and enable 2FA immediately."',
+        sampleSpans: [
+          {
+            id: 'cs-4-s1',
+            userInput: "Someone logged into my account from a different country. I didn't authorize this.",
+            agentOutput: "Don't worry — this can happen when logging in from a new device or location. Try resetting your password and enabling two-factor authentication to secure your account.",
+            evalLabel: 'fail',
+            evalReason: 'Unauthorized access from a foreign location is a security incident requiring immediate escalation, not a self-service password reset.',
+          },
+          {
+            id: 'cs-4-s2',
+            userInput: "My account has been hacked. There are purchases I didn't make.",
+            agentOutput: "I'm escalating this to our security team immediately. Please change your password and enable 2FA right now while I flag your account. Our security team will contact you within the hour.",
+            evalLabel: 'pass',
+            evalReason: 'Correctly identified as a security incident and escalated immediately.',
+          },
+          {
+            id: 'cs-4-s3',
+            userInput: "I think my account is compromised — I'm getting password reset emails I didn't request.",
+            agentOutput: "That's likely a phishing attempt. Don't click any links in those emails. You can reset your password directly from our website to make sure your account is secure.",
+            evalLabel: 'fail',
+            evalReason: 'Unsolicited password reset emails indicate active account targeting — requires security team escalation, not self-service advice.',
+          },
+        ],
       },
       {
         id: 'cs-5',
@@ -92,6 +199,31 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Add discount stacking rules to the promotions KB article with explicit examples of valid and invalid combinations.',
+        suggestedPromptDiff:
+          'Discount code stacking policy: one promotional code per order. Exception: loyalty rewards points can always be combined with one promotional code. Bundle deals and sale prices cannot be combined with additional discount codes. When in doubt, direct the customer to apply codes at checkout — the system will show which are eligible.',
+        sampleSpans: [
+          {
+            id: 'cs-5-s1',
+            userInput: "Can I use two discount codes on the same order?",
+            agentOutput: "Yes, you can stack discount codes as long as they're from different promotions. Just enter both at checkout!",
+            evalLabel: 'fail',
+            evalReason: 'Policy allows only one promotional code per order. Agent incorrectly confirmed stacking is allowed.',
+          },
+          {
+            id: 'cs-5-s2',
+            userInput: "I have a loyalty reward and a promo code — can I use both?",
+            agentOutput: "Great news — loyalty rewards points can be combined with one promotional code. Go ahead and apply both at checkout.",
+            evalLabel: 'pass',
+            evalReason: 'Correctly identified the loyalty + promo code exception and gave accurate guidance.',
+          },
+          {
+            id: 'cs-5-s3',
+            userInput: "Can I use a 20% off code on an item that's already on sale?",
+            agentOutput: "Discount codes generally work on most items. Try entering it at checkout and it should apply automatically.",
+            evalLabel: 'fail',
+            evalReason: 'Sale items cannot be combined with additional codes. Agent gave a vague non-answer instead of the correct policy.',
+          },
+        ],
       },
     ],
     experiments: [
@@ -170,6 +302,38 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Add a citation verification step that checks all cited cases against the legal database before returning a response.',
+        suggestedPromptDiff:
+          'Before returning any response that includes a case citation, verify the citation exists in the Westlaw or LexisNexis index. If a citation cannot be verified, do not include it. Instead say: "I found relevant precedent but could not verify the exact citation — please confirm with Westlaw before filing." Never fabricate case names, docket numbers, or reporter citations.',
+        sampleSpans: [
+          {
+            id: 'lr-1-s1',
+            userInput: "What cases support a negligence claim for defective product warnings in California?",
+            agentOutput: "Key precedents include Johnson v. Acme Manufacturing Co., 847 F.3d 1122 (9th Cir. 2017) and Hernandez v. Pacific Industries, 23 Cal.App.5th 445 (2019), both holding manufacturers liable for inadequate warnings.",
+            evalLabel: 'fail',
+            evalReason: 'Neither citation exists in Westlaw or LexisNexis. Both case names and reporter citations are fabricated.',
+          },
+          {
+            id: 'lr-1-s2',
+            userInput: "Find precedent for tortious interference with contract in New York.",
+            agentOutput: "The leading New York case is Guard-Life Corp. v. Parker Hardware Mfg. Corp., 50 N.Y.2d 183 (1980), which established the elements of tortious interference. More recently, see Carvel Corp. v. Noonan, 3 N.Y.3d 182 (2004).",
+            evalLabel: 'pass',
+            evalReason: 'Both citations verified in Westlaw. Guard-Life Corp. and Carvel Corp. are real and accurately described.',
+          },
+          {
+            id: 'lr-1-s3',
+            userInput: "What's the standard for preliminary injunctions in the 9th Circuit?",
+            agentOutput: "The 9th Circuit applies the four-factor Winter test from Winter v. Natural Resources Defense Council, 555 U.S. 7 (2008), requiring likelihood of success on the merits, irreparable harm, balance of equities, and public interest.",
+            evalLabel: 'pass',
+            evalReason: 'Citation verified. Winter v. NRDC is correctly cited and the four-factor test is accurately described.',
+          },
+          {
+            id: 'lr-1-s4',
+            userInput: "Are there cases supporting punitive damages for insurance bad faith in Texas?",
+            agentOutput: "Yes — see Williams v. State Farm Lloyds, 395 S.W.3d 728 (Tex. App. 2013) and Martinez v. Allstate Insurance, 2019 WL 4892341 (Tex. App. 2019), both affirming punitive awards for bad faith claims handling.",
+            evalLabel: 'fail',
+            evalReason: 'Williams v. State Farm Lloyds at this citation does not exist. The WestLaw number for Martinez also does not match any real case.',
+          },
+        ],
       },
       {
         id: 'lr-2',
@@ -186,6 +350,31 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Add jurisdiction detection to the query preprocessing step and constrain retrieval to the correct state corpus.',
+        suggestedPromptDiff:
+          'Before retrieving statutes or case law, identify the jurisdiction explicitly stated or implied in the query. If the query references a state matter (e.g. employment, landlord-tenant, family law), retrieve only from that state\'s corpus. Do not apply federal statutes to state law questions unless the query specifically asks about federal preemption or dual jurisdiction.',
+        sampleSpans: [
+          {
+            id: 'lr-2-s1',
+            userInput: "What are the notice requirements for terminating a residential lease in Illinois?",
+            agentOutput: "Under federal housing law, specifically 42 U.S.C. § 1437f, landlords must provide adequate notice before lease termination. The standard minimum is 30 days for month-to-month tenancies.",
+            evalLabel: 'fail',
+            evalReason: 'Illinois residential lease termination is governed by 735 ILCS 5/9-207, not federal housing law. Federal statute cited is inapplicable.',
+          },
+          {
+            id: 'lr-2-s2',
+            userInput: "What's the statute of limitations for breach of contract claims in Florida?",
+            agentOutput: "Under Florida Statutes § 95.11(2)(b), the statute of limitations for written contract claims is 5 years. For oral contracts, it's 4 years under § 95.11(3)(k).",
+            evalLabel: 'pass',
+            evalReason: 'Correctly identified Florida state law and cited the accurate Florida Statutes sections.',
+          },
+          {
+            id: 'lr-2-s3',
+            userInput: "What are the filing deadlines for a wrongful termination claim in California?",
+            agentOutput: "Federal employment discrimination claims must be filed with the EEOC within 180 days under Title VII, 42 U.S.C. § 2000e-5(e)(1).",
+            evalLabel: 'fail',
+            evalReason: 'California wrongful termination claims may also be filed with DFEH under FEHA with a 3-year deadline. Federal EEOC deadline alone is incomplete and potentially misleading for a California-specific query.',
+          },
+        ],
       },
       {
         id: 'lr-3',
@@ -202,6 +391,24 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Filter retrieval results by case status and add a recency ranking signal that down-weights cases older than 5 years.',
+        suggestedPromptDiff:
+          'When retrieving case law, check the Westlaw KeyCite or LexisNexis Shepard\'s status of each case before citing it. Do not cite cases with red flags (overruled, superseded) or yellow flags (distinguished, questioned) without explicitly noting the flag. Prefer cases decided after 2020 unless the older case is the controlling authority and has not been negatively treated.',
+        sampleSpans: [
+          {
+            id: 'lr-3-s1',
+            userInput: "What's the leading case on qualified immunity for police officers?",
+            agentOutput: "The foundational case is Harlow v. Fitzgerald, 457 U.S. 800 (1982), establishing the objective reasonableness standard. This remains the controlling authority.",
+            evalLabel: 'pass',
+            evalReason: 'Harlow v. Fitzgerald is still controlling precedent and has not been overruled.',
+          },
+          {
+            id: 'lr-3-s2',
+            userInput: "Find precedent on non-compete enforceability in North Carolina.",
+            agentOutput: "The key case is Chemimetals Processing, Inc. v. McEneny, 124 N.C. App. 194 (1996), which established the blue-pencil doctrine for modifying overbroad non-competes in North Carolina.",
+            evalLabel: 'fail',
+            evalReason: 'While Chemimetals is still cited, subsequent cases including Beverage Systems of the Carolinas v. Associated Beverage Repair (2016) modified this doctrine. The 1996 case should not be presented as the current standard without noting subsequent treatment.',
+          },
+        ],
       },
       {
         id: 'lr-4',
@@ -218,6 +425,24 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Require verbatim statute text retrieval rather than agent-generated paraphrase for all section-level citations.',
+        suggestedPromptDiff:
+          'When citing a specific subsection of a statute, retrieve and quote the verbatim statutory text rather than paraphrasing from memory. Never generate section numbers — always retrieve them from the source. If retrieval returns the statute but not the specific subsection, say so explicitly rather than guessing.',
+        sampleSpans: [
+          {
+            id: 'lr-4-s1',
+            userInput: "What does the ADA say about reasonable accommodation obligations?",
+            agentOutput: "Under 42 U.S.C. § 12112(b)(5)(A), employers must make reasonable accommodations for known disabilities unless doing so causes undue hardship.",
+            evalLabel: 'pass',
+            evalReason: 'Correct subsection cited verbatim. § 12112(b)(5)(A) accurately describes the reasonable accommodation requirement.',
+          },
+          {
+            id: 'lr-4-s2',
+            userInput: "What are the FMLA requirements for employer notice obligations?",
+            agentOutput: "Under 29 U.S.C. § 2619(a)(1), employers must post FMLA notices in a conspicuous location and provide general notice to employees.",
+            evalLabel: 'fail',
+            evalReason: 'Employer notice requirements are in 29 U.S.C. § 2619 but subsection (a)(1) describes posting requirements. The agent transposed the subsection — written notice to employees is § 2619(b).',
+          },
+        ],
       },
     ],
     experiments: [
@@ -273,6 +498,31 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Add a dedicated security eval step that pattern-matches for common injection vectors before approving any database query code.',
+        suggestedPromptDiff:
+          'Before approving any code that constructs SQL queries, check for string concatenation of user-controlled variables. If found, reject with: "This query is vulnerable to SQL injection. Use parameterized queries or a prepared statement instead." Flag any use of f-strings, .format(), or % operator to build SQL query strings as a blocking issue.',
+        sampleSpans: [
+          {
+            id: 'ca-1-s1',
+            userInput: "Review this function:\ndef get_user(username):\n    query = f\"SELECT * FROM users WHERE username = '{username}'\"\n    return db.execute(query)",
+            agentOutput: "The function looks good. It retrieves a user by username efficiently. Consider adding error handling for the case where no user is found.",
+            evalLabel: 'fail',
+            evalReason: 'Critical SQL injection vulnerability via f-string interpolation of user input. Should have been flagged as a blocking security issue.',
+          },
+          {
+            id: 'ca-1-s2',
+            userInput: "Review this:\ndef search_products(term):\n    return db.execute('SELECT * FROM products WHERE name = ?', (term,))",
+            agentOutput: "Good use of parameterized queries — this is the correct pattern to prevent SQL injection. The placeholder `?` ensures user input is properly escaped.",
+            evalLabel: 'pass',
+            evalReason: 'Correctly identified safe parameterized query pattern and explained why it prevents injection.',
+          },
+          {
+            id: 'ca-1-s3',
+            userInput: "Check this:\nquery = 'SELECT id, email FROM accounts WHERE id = ' + request.args.get('id')\nresult = conn.execute(query)",
+            agentOutput: "This query retrieves account data by ID. Make sure to handle the case where `id` is None. Otherwise the logic looks fine.",
+            evalLabel: 'fail',
+            evalReason: 'Direct string concatenation of request parameter into SQL query is a critical injection vulnerability. Not flagged.',
+          },
+        ],
       },
       {
         id: 'ca-2',
@@ -289,6 +539,24 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Ground suggestions in the pinned library version from the repo manifest before generating method-level completions.',
+        suggestedPromptDiff:
+          'Before suggesting a library method or API call, check the pinned version in requirements.txt, pyproject.toml, or package.json. Do not suggest methods that were added in later versions. If you are unsure whether a method exists in the pinned version, say so and recommend the developer verify with the official changelog.',
+        sampleSpans: [
+          {
+            id: 'ca-2-s1',
+            userInput: "How do I parse a date string with pandas? I'm using pandas 1.3.0.",
+            agentOutput: "Use `pd.to_datetime(date_str).as_unit('s')` to parse and convert to seconds precision.",
+            evalLabel: 'fail',
+            evalReason: '`as_unit()` was added in pandas 2.0.0. This method does not exist in pandas 1.3.0 and will raise AttributeError.',
+          },
+          {
+            id: 'ca-2-s2',
+            userInput: "How do I convert a dataframe to a dict in pandas 1.3?",
+            agentOutput: "Use `df.to_dict(orient='records')` to get a list of row dictionaries. This has been available since early pandas versions and works in 1.3.",
+            evalLabel: 'pass',
+            evalReason: '`to_dict(orient=\'records\')` is available in pandas 1.3.0 and accurately described.',
+          },
+        ],
       },
       {
         id: 'ca-3',
@@ -305,6 +573,24 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Add an async-aware static analysis step that identifies shared state mutations without proper locking.',
+        suggestedPromptDiff:
+          'When reviewing async code, check for shared mutable state (module-level variables, class attributes, mutable defaults) that is read and written across multiple coroutines or tasks without an asyncio.Lock. Flag any pattern where `await` appears between reading and writing shared state as a potential race condition requiring explicit locking.',
+        sampleSpans: [
+          {
+            id: 'ca-3-s1',
+            userInput: "Review this async handler:\ncounter = 0\nasync def increment():\n    global counter\n    val = counter\n    await asyncio.sleep(0)\n    counter = val + 1",
+            agentOutput: "The function increments a global counter asynchronously. Looks straightforward — the sleep simulates an async operation. Make sure to call this from an event loop.",
+            evalLabel: 'fail',
+            evalReason: 'Classic race condition: reading `counter`, awaiting, then writing allows other tasks to interleave. `counter` should be incremented atomically or protected with asyncio.Lock.',
+          },
+          {
+            id: 'ca-3-s2',
+            userInput: "Is this pattern safe?\nlock = asyncio.Lock()\nasync def safe_increment():\n    async with lock:\n        counter += 1",
+            agentOutput: "Yes — using `asyncio.Lock` as an async context manager is the correct pattern for protecting shared state in async code. This prevents race conditions.",
+            evalLabel: 'pass',
+            evalReason: 'Correctly identified asyncio.Lock as the right mitigation and explained why it prevents the race.',
+          },
+        ],
       },
       {
         id: 'ca-4',
@@ -321,6 +607,24 @@ export const PROFILES: AgentProfile[] = [
         status: 'open',
         suggestedFix:
           'Add complexity analysis to the review step and require justification when suggesting quadratic or worse solutions.',
+        suggestedPromptDiff:
+          'When reviewing or suggesting algorithms, always state the time and space complexity. If the suggested solution is O(n²) or worse and a better alternative exists, recommend the more efficient approach. For sorting: prefer built-in sort (O(n log n)). For lookups: prefer dict/set (O(1)) over list scan (O(n)). Do not suggest nested loops over large collections without flagging the complexity.',
+        sampleSpans: [
+          {
+            id: 'ca-4-s1',
+            userInput: "How do I find duplicates in a list of 100k items?",
+            agentOutput: "You can use a nested loop: `dups = [x for i, x in enumerate(items) if x in items[:i]]`. This checks each element against all previous elements.",
+            evalLabel: 'fail',
+            evalReason: 'O(n²) solution suggested for a 100k item list. Should recommend `seen = set(); dups = [x for x in items if x in seen or seen.add(x)]` — O(n).',
+          },
+          {
+            id: 'ca-4-s2',
+            userInput: "What's the fastest way to check if a value exists in a collection I'll query repeatedly?",
+            agentOutput: "Use a `set` for O(1) average-case lookup instead of a list (O(n)). Convert once with `lookup = set(items)`, then check with `if value in lookup`.",
+            evalLabel: 'pass',
+            evalReason: 'Correctly recommended set for O(1) lookup and explained the complexity tradeoff.',
+          },
+        ],
       },
     ],
     experiments: [
