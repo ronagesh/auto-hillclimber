@@ -129,8 +129,8 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-xl">
         <div className="flex items-center gap-2 mb-10">
-          <img src="https://avatars.githubusercontent.com/u/71517989" alt="Arize" className="w-7 h-7 rounded" />
-          <span className="font-bold text-gray-900 text-base tracking-wide">ARIZE HILLCLIMBER</span>
+          <img src="https://arize.com/wp-content/uploads/2021/10/logo2.svg" alt="Arize" className="h-5" />
+          <span className="font-bold text-gray-900 text-base tracking-wide">HILLCLIMBER</span>
         </div>
         {children}
       </div>

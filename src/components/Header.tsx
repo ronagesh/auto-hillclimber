@@ -13,8 +13,8 @@ export function Header({ activeTab, onTabChange, agentLabel, onReset }: HeaderPr
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <button onClick={onReset} className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-            <img src="https://avatars.githubusercontent.com/u/71517989" alt="Arize" className="w-5 h-5 rounded" />
-            <span className="font-semibold text-gray-900 text-sm tracking-wide">ARIZE HILLCLIMBER</span>
+            <img src="https://arize.com/wp-content/uploads/2021/10/logo2.svg" alt="Arize" className="h-4" />
+            <span className="font-semibold text-gray-900 text-sm tracking-wide">HILLCLIMBER</span>
           </button>
           <span className="text-gray-200">|</span>
           <span className="text-sm text-gray-500 font-medium truncate max-w-[180px]">{agentLabel}</span>
