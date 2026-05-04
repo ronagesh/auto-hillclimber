@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const STEPS = [
   'Analyzing agent description',
@@ -14,16 +14,18 @@ interface LoadingScreenProps {
 
 export function LoadingScreen({ onComplete }: LoadingScreenProps) {
   const [completedSteps, setCompletedSteps] = useState(0);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     if (completedSteps >= STEPS.length) {
-      const t = setTimeout(onComplete, 500);
+      const t = setTimeout(() => onCompleteRef.current(), 500);
       return () => clearTimeout(t);
     }
     const delay = completedSteps === 0 ? 600 : 700 + Math.random() * 400;
     const t = setTimeout(() => setCompletedSteps(s => s + 1), delay);
     return () => clearTimeout(t);
-  }, [completedSteps, onComplete]);
+  }, [completedSteps]); // onComplete excluded — stored in ref to avoid restarting the effect
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
