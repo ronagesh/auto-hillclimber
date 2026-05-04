@@ -45,7 +45,7 @@ function App() {
     setActiveTab('feed');
   }
 
-  function handleRunExperiment(_id: string) {
+  function handleApply(_id: string) {
     setActiveTab('impact');
   }
 
@@ -66,7 +66,7 @@ function App() {
         onReset={handleReset}
       />
       {activeTab === 'feed' ? (
-        <HillclimbFeed profile={activeProfile} onRunExperiment={handleRunExperiment} />
+        <HillclimbFeed profile={activeProfile} onApply={handleApply} />
       ) : (
         <ImpactTracker profile={activeProfile} />
       )}

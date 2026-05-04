@@ -36,10 +36,10 @@ function StatCard({ label, value, sub, accent }: StatCardProps) {
 
 interface HillclimbFeedProps {
   profile: AgentProfile;
-  onRunExperiment: (id: string) => void;
+  onApply: (id: string) => void;
 }
 
-export function HillclimbFeed({ profile, onRunExperiment }: HillclimbFeedProps) {
+export function HillclimbFeed({ profile, onApply }: HillclimbFeedProps) {
   const [priority, setPriority] = useState<Priority | 'all'>('all');
   const [category, setCategory] = useState('All');
 
@@ -97,7 +97,7 @@ export function HillclimbFeed({ profile, onRunExperiment }: HillclimbFeedProps) 
 
       <div className="flex flex-col gap-3">
         {filtered.map(issue => (
-          <IssueCard key={issue.id} issue={issue} onRunExperiment={onRunExperiment} />
+          <IssueCard key={issue.id} issue={issue} onApply={onApply} />
         ))}
         {filtered.length === 0 && (
           <div className="text-center py-12 text-gray-400 text-sm">No issues match the selected filters.</div>

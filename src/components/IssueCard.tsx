@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Issue, Level, Priority } from '../types';
 
 const priorityStyles: Record<Priority, string> = {
@@ -20,18 +21,32 @@ const levelLabel: Record<Level, string> = {
 
 interface IssueCardProps {
   issue: Issue;
-  onRunExperiment: (id: string) => void;
+  onApply: (id: string) => void;
 }
 
-export function IssueCard({ issue, onRunExperiment }: IssueCardProps) {
+export function IssueCard({ issue, onApply }: IssueCardProps) {
+  const [applied, setApplied] = useState(issue.status === 'applied');
+
+  function handleApply() {
+    setApplied(true);
+    onApply(issue.id);
+  }
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition-colors">
+    <div className={`bg-white border rounded-lg p-5 transition-colors ${applied ? 'border-emerald-200 opacity-70' : 'border-gray-200 hover:border-gray-300'}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityStyles[issue.priority]}`}>
-              {issue.priority === 'high' ? 'High Priority' : issue.priority === 'medium' ? 'Medium Priority' : 'Low Priority'}
-            </span>
+            {!applied && (
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${priorityStyles[issue.priority]}`}>
+                {issue.priority === 'high' ? 'High Priority' : issue.priority === 'medium' ? 'Medium Priority' : 'Low Priority'}
+              </span>
+            )}
+            {applied && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                Fix applied · experiment running
+              </span>
+            )}
             <span className="text-xs text-gray-400">{issue.category}</span>
             <span className="text-gray-200">·</span>
             <span className="text-xs text-gray-400">{issue.evaluator}</span>
@@ -53,13 +68,22 @@ export function IssueCard({ issue, onRunExperiment }: IssueCardProps) {
             </span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-          <button
-            onClick={() => onRunExperiment(issue.id)}
-            className="px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-full transition-colors whitespace-nowrap"
-          >
-            Run Experiment
-          </button>
+        <div className="flex-shrink-0">
+          {applied ? (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+              Applied
+            </div>
+          ) : (
+            <button
+              onClick={handleApply}
+              className="px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-full transition-colors whitespace-nowrap"
+            >
+              Apply Fix
+            </button>
+          )}
         </div>
       </div>
       <div className="mt-3 pt-3 border-t border-gray-50">
