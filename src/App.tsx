@@ -12,7 +12,16 @@ type AppState = 'onboarding' | 'loading' | 'dashboard';
 
 function extractAgentLabel(input: string): string {
   if (input.startsWith('manual:')) {
-    const desc = input.slice('manual:'.length).split('|||')[0].trim().replace(/\.$/, '');
+    const parts = input.slice('manual:'.length).split('|||');
+    const url = parts[2]?.trim();
+    if (url) {
+      try {
+        const hostname = new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace('www.', '');
+        const name = hostname.split('.')[0];
+        return name.charAt(0).toUpperCase() + name.slice(1);
+      } catch { /* fall through */ }
+    }
+    const desc = parts[0].trim().replace(/\.$/, '');
     const words = desc.split(/\s+/);
     return words.length <= 6 ? desc : words.slice(0, 6).join(' ') + '...';
   }

@@ -31,7 +31,7 @@ export function Onboarding({ onActivate }: OnboardingProps) {
   }
 
   function handleActivate(description: string, kpis: string) {
-    onActivate(`manual:${description}|||${kpis}`);
+    onActivate(`manual:${description}|||${kpis}|||${url}`);
   }
 
   // ── URL entry ──────────────────────────────────────────────────────────────
