@@ -224,6 +224,43 @@ Rules:
 - affectedSpans: 50-600
 - suggestedPromptDiff should read as actual system prompt instructions`;
 
+export async function inferFromUrl(url: string): Promise<{ description: string; kpis: string }> {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY not set');
+
+  let domain = url;
+  try { domain = new URL(url).hostname.replace('www.', ''); } catch { /* noop */ }
+
+  const content = await fetchWebsiteText(url);
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+
+  const contextBlock = content.length > 100
+    ? `Company: ${domain}\nURL: ${url}\n\nWebsite metadata:\n${content}`
+    : `Company: ${domain}\nURL: ${url}\n\nNo website content fetched — use your training knowledge about ${domain}.`;
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 400,
+    system: 'You are a product analyst. Given a company, identify exactly what AI agent they operate and what metrics they care about. Be specific and accurate — use training knowledge if available. Return only valid JSON.',
+    messages: [{
+      role: 'user',
+      content: `${contextBlock}
+
+Return JSON with exactly these two fields:
+{
+  "description": "2-3 sentence description of the AI agent this company operates — be specific about what it does, who it serves, and what kinds of tasks it handles",
+  "kpis": "The 2-3 most important KPIs this company would measure for their agent, written as a natural sentence (e.g. 'High deflection rate, strong CSAT scores, and low escalation rate')"
+}`,
+    }],
+  });
+
+  const text = response.content[0].type === 'text' ? response.content[0].text : '';
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('No JSON');
+  const parsed = JSON.parse(match[0]) as { description: string; kpis: string };
+  return { description: parsed.description ?? '', kpis: parsed.kpis ?? '' };
+}
+
 export async function generateProfile(input: string): Promise<AgentProfile> {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY not set');
