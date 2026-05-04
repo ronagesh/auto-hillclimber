@@ -26,13 +26,17 @@ function App() {
   // Holds the in-flight profile promise so the loading screen can await it
   const profilePromiseRef = useRef<Promise<AgentProfile> | null>(null);
 
-  function handleActivate(description: string, kpis: string) {
-    setAgentLabel(extractAgentLabel(description));
-    // Start the API call immediately, store promise for LoadingScreen to await
-    profilePromiseRef.current = generateProfile(description, kpis).catch(() => {
-      // Fallback to customer support profile if API call fails (e.g. no key set)
-      return PROFILES[0];
-    });
+  function handleActivate(input: string) {
+    // Derive a display label from the input
+    if (input.startsWith('manual:')) {
+      const desc = input.slice('manual:'.length).split('|||')[0];
+      setAgentLabel(extractAgentLabel(desc));
+    } else {
+      // Show the domain as the label while loading
+      try { setAgentLabel(new URL(input).hostname.replace('www.', '')); }
+      catch { setAgentLabel(input); }
+    }
+    profilePromiseRef.current = generateProfile(input).catch(() => PROFILES[0]);
     setAppState('loading');
   }
 

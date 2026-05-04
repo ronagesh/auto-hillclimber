@@ -103,65 +103,75 @@ function assembleProfile(raw: Record<string, unknown>): AgentProfile {
   };
 }
 
-export async function generateProfile(description: string, kpis: string): Promise<AgentProfile> {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY not set');
+async function fetchWebsiteText(url: string): Promise<string> {
+  try {
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+    const data = await res.json() as { contents?: string };
+    const html = data.contents ?? '';
+    // Strip scripts, styles, tags; collapse whitespace
+    return html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 4000);
+  } catch {
+    return '';
+  }
+}
 
-  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
-  const prompt = `You are the Arize Autopilot intelligence engine. Given an AI agent description and its KPIs, generate a realistic set of production failure clusters that this agent is experiencing, along with sample traces and suggested fixes.
-
-Agent description: ${description}
-KPIs that matter: ${kpis}
+const GENERATION_PROMPT = `You are the Arize Autopilot intelligence engine. Given context about a company's product, generate a realistic set of production failure clusters that their AI agent is experiencing, along with sample traces and suggested fixes.
 
 Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 
 {
-  "kpi1": "Primary KPI name using the user's exact terminology, 2-4 words",
-  "kpi2": "Secondary KPI name using the user's exact terminology, 2-4 words",
+  "kpi1": "Primary KPI name, 2-4 words, using terminology natural to this company's domain",
+  "kpi2": "Secondary KPI name, 2-4 words",
   "kpi1Lift": "+X pts",
   "kpi2Lift": "+X pts",
   "issues": [
     {
-      "title": "Concise issue title describing the failure mode",
+      "title": "Concise issue title",
       "category": "One of: Hallucination, Correctness, Tone, Completeness, Policy Violation, Escalation Accuracy",
       "evaluator": "short-slug-evaluator-name",
-      "priority": "high",
+      "priority": "high|medium|low",
       "description": "2-3 sentences describing exactly what is failing, with a specific failure rate percentage and business impact.",
-      "frequency": "high",
-      "kpiRisk": "high",
-      "escalationVolume": "high",
+      "frequency": "high|medium|low",
+      "kpiRisk": "high|medium|low",
+      "escalationVolume": "high|medium|low",
       "affectedSpans": 350,
-      "suggestedFix": "One actionable sentence describing the fix.",
-      "suggestedPromptDiff": "The exact 2-5 sentence instruction to add to the system prompt to address this issue. Should be specific and directly actionable.",
+      "suggestedFix": "One actionable sentence.",
+      "suggestedPromptDiff": "The exact 2-5 sentence instruction to add to the system prompt. Specific and directly actionable.",
       "sampleSpans": [
         {
-          "userInput": "A realistic user message that triggers this failure",
-          "agentOutput": "The agent's failing response (1-3 sentences, realistic)",
+          "userInput": "Realistic user message that triggers this failure",
+          "agentOutput": "Agent's failing response (1-3 sentences)",
           "evalLabel": "fail",
-          "evalReason": "Specific reason this response failed the evaluator"
+          "evalReason": "Specific reason this response failed"
         },
         {
-          "userInput": "A similar user message where the agent handled it correctly",
-          "agentOutput": "The agent's correct response",
+          "userInput": "Similar message where agent handled it correctly",
+          "agentOutput": "Correct agent response",
           "evalLabel": "pass",
-          "evalReason": "Why this response passed"
+          "evalReason": "Why this passed"
         },
         {
-          "userInput": "Another user message showing the failure mode",
+          "userInput": "Another message showing the failure mode",
           "agentOutput": "Another failing response",
           "evalLabel": "fail",
-          "evalReason": "Why this one failed"
+          "evalReason": "Why this failed"
         }
       ]
     }
   ],
   "experiments": [
     {
-      "issueTitle": "Title of an issue that was already fixed (can be a past issue not in the open list)",
+      "issueTitle": "Title of a past issue that was already fixed",
       "category": "Category of that issue",
       "appliedDate": "Apr 14, 2026",
-      "change": "Description of exactly what was changed to fix it",
+      "change": "Description of what was changed",
       "metric1Before": 65,
       "metric1After": 78,
       "metric2Before": 70,
@@ -174,18 +184,42 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 }
 
 Rules:
-- Generate exactly 4-5 issues ordered by priority (high priority first)
+- Generate exactly 4-5 issues ordered by priority (high first)
 - Generate exactly 1-2 experiments showing past fixes that moved the KPIs
-- Every issue, span, and fix MUST be specific to the described agent type — no generic content
-- Use the user's exact KPI terminology in kpi1 and kpi2
-- Failure rates in descriptions should be between 15% and 45%
-- affectedSpans should be realistic (50-600 range)
-- suggestedPromptDiff should read as actual system prompt instructions, not meta-commentary`;
+- Every issue, span, and fix MUST be specific to this company's actual product and domain
+- Use KPI terminology natural to this company's industry
+- Failure rates in descriptions: 15-45%
+- affectedSpans: 50-600
+- suggestedPromptDiff should read as actual system prompt instructions`;
+
+export async function generateProfile(input: string): Promise<AgentProfile> {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY not set');
+
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+
+  let contextBlock: string;
+
+  if (input.startsWith('manual:')) {
+    // Manual description mode: "manual:description|||kpis"
+    const rest = input.slice('manual:'.length);
+    const [description, kpis] = rest.split('|||');
+    contextBlock = `Agent description: ${description}\nKPIs that matter: ${kpis}`;
+  } else {
+    // URL mode: fetch site content, fall back to URL-only inference
+    const websiteText = await fetchWebsiteText(input);
+    if (websiteText.length > 100) {
+      contextBlock = `Company website URL: ${input}\n\nWebsite content (truncated):\n${websiteText}`;
+    } else {
+      contextBlock = `Company website URL: ${input}\n\nNote: Could not fetch website content — infer the company's product and AI agent use case from the URL and your knowledge of this company.`;
+    }
+  }
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 4000,
-    messages: [{ role: 'user', content: prompt }],
+    system: GENERATION_PROMPT,
+    messages: [{ role: 'user', content: contextBlock }],
   });
 
   const text = response.content[0].type === 'text' ? response.content[0].text : '';
